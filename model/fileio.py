@@ -5,9 +5,9 @@ from algorithm import lcs
 class Line:
 
     def __init__(self, line_number=None, content=None):
-        self.line_number = line_number
+        self.line_number = line_number + 1
         self.content = content
-        self.state = Modification(line_number, content)
+        self.state = Create(line_number, content)
 
     def current_state(self):
         return self.state
@@ -26,11 +26,13 @@ class Line:
         return self
 
     def change_state(self, changes: []):
-        for change in changes:
-            if ("+" and "-") in change:
-                self.set_state(Update(self.line_number, self.content))
-            elif "-" in change:
-                self.set_state(Delete(self.line_number, self.content))
+        changes_str = "".join(changes)
+        if "+" in changes_str and "-" in changes_str:
+            self.set_state(Update(self.line_number, self.content))
+        elif "+" in changes_str:
+            self.set_state(Create(self.line_number, self.content))
+        elif "-" in changes_str:
+            self.set_state(Delete(self.line_number, self.content))
 
     def diff_table(self, line_obj) -> []:
         """
@@ -40,22 +42,25 @@ class Line:
 
 
 class FileVersion:
-    """TODO:Changing state of line after getting the differences"""
 
     def __init__(self, version_name=None, all_lines=None, current_version=1):
         self.version_name = version_name
         self.current_version = current_version
-        self.lines = []
+        self.lines = deque()
         for num, content in enumerate(all_lines):
             line_obj = Line(num, content)
             self.lines.append(line_obj)
 
     def compare_line(self, new_version):
         counts = []
-        for index, each_line in enumerate(self.lines):
-            new_line = each_line.compare_with(new_version.lines[index])
+        last_line_count = 1
+        while len(self.lines) != 0:
+            new_line = self.lines.popleft().compare_with(new_version.lines.popleft())
             counts.append(new_line)
-            print(each_line.state)
+            last_line_count = last_line_count + 1
+        for remain in new_version.lines:
+            remain._line_number = last_line_count
+            counts.append(remain)
         return counts
 
 

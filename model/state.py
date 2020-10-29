@@ -1,4 +1,8 @@
+from collections import deque
+
+
 class Modification:
+    total_length = 4
 
     def __init__(self, line_number, content):
         self._line_number = line_number
@@ -9,10 +13,18 @@ class Modification:
             self._content = self._content.replace('+', "")
             self._content = self._content.replace('-', "")
             self._content = self._content.replace("  ", "")
-        return self._content.split(" ")
+        split = deque(filter(None, self._content.split(" ")))
+        final_list = deque(['' for _ in range(total_cell)])
+        while len(split) != 0:
+            possible_word = split.popleft()
+            if not possible_word.isnumeric():
+                final_list[1] += possible_word + ' '
+            else:
+                final_list[3] = possible_word
+        return list(final_list)
 
     def range(self, column='A'):
-        next_char = chr(ord(column) + len(self._content.split(" ")) - 1)
+        next_char = chr(ord(column) + Modification.total_length - 1)
         return f'{column}{self._line_number}:{next_char}{self._line_number}'
 
 
@@ -37,5 +49,5 @@ class Update(Modification):
 class Delete(Modification):
 
     def get_content(self):
-        self._content = (len(self._content.split(" ")) - 1) * " "
+        self._content = ""
         return super().get_content()
