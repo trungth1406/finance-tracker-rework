@@ -53,15 +53,36 @@ class FileVersion:
 
     def compare_line(self, new_version):
         counts = []
-        last_line_count = 1
-        while len(self.lines) != 0:
-            new_line = self.lines.popleft().compare_with(new_version.lines.popleft())
-            counts.append(new_line)
-            last_line_count = last_line_count + 1
-        for remain in new_version.lines:
-            remain._line_number = last_line_count
-            counts.append(remain)
+        while len(self.lines) != 0 and len(new_version.lines) != 0:
+            old_line = self.lines.popleft()
+            new_line = new_version.lines.popleft()
+            counts.append(old_line.compare_with(new_line))
+        if len(self.lines) > 0:
+            for remain in self.lines:
+                line_number = remain.line_number
+                content = remain.content
+                line = Line(line_number, content)
+                line.state = Delete(line_number, content)
+                counts.append(line)
+        if len(new_version.lines) > 0:
+            for remain in new_version.lines:
+                line_number = remain.line_number
+                content = remain.content
+                line = Line(line_number, content)
+                line.state = Create(line_number, content)
+                counts.append(line)
         return counts
+
+    @staticmethod
+    def handle_remain(lines, state : Modification):
+        remain_counts = []
+        for remain in lines.lines:
+            line_number = remain.line_number
+            content = remain.content
+            line = Line(line_number, content)
+            line.state = state
+            remain_counts.append(line)
+        return remain_counts
 
 
 class File:
