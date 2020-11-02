@@ -1,20 +1,71 @@
-from model.state import *
+import binascii
+import zlib
+
+from tinydb.table import Document
+
+from googleapi.sheetapi import GoogleService, GoogleSheetRequest
+from macnotereader import notereader
 from model.fileio import *
+from pprint import pprint
+import gspread
+from caching.jsondb import *
+import sqlite3
+import ast
 
-"""TODO: Fix bug when new version with  remains line start at 0 """
 
-
+"""find a way tp load document record to file_version_object"""
 def main():
     f = open("test.txt", "r")
-    f2 = open("test2.txt", "r")
-    lines = f.readlines()
-    file_version = File(f.name, lines)
-    file_version_2 = File(f2.name, f2.readlines())
-    new_lines = file_version.compare(file_version_2)
-    for line in new_lines:
-        print(line.state.get_content())
-        print(line.state.range())
-        print(line.state)
+    lines = notereader.get_new_contents(possible_file_name=f'Tháng 10')
+    if len(lines) == 0: return
+    new_file_version = FileVersion(all_lines=lines)
+    db = TinyDB("db.json")
+    table = db.table("file_version")
+    if len(table) == 0:
+        table.insert({"content": new_file_version.to_json(), "ver_name": u"Tháng 10"})
+    else:
+        file_version_query = Query()
+
+        doc = table.get(doc_id=len(table))
+        loaded = json.load(doc, cls=FileVersion)
+        new_file_version.compare_line(loaded)
+        table.insert({"content": new_file_version.to_json(), "ver_name": u" Tháng 10"})
+
+
+# f2 = open("test2.txt", "r")
+# lines = f.readlines()
+# file_version = File(f.name, lines)
+# file_version_2 = File(f2.name, f2.readlines())
+# new_lines = file_version.compare(file_version_2)
+# db = TinyDB("db.json")
+# table = db.table("file_version")
+# table.insert({f"version": file_version_2.to_json()})
+# res = table.get(doc_id=len(table))
+# print(res)
+# for line in new_lines:
+#     print(line.state.get_content())
+#     print(line.state.range())
+#     print(line.state)
+# encode(line.state)
+# db = TinyDB('db.json')
+# table = db.table("file_version")
+# table
+# res = decode("cache.json")
+# pprint(res)
+# google_service = GoogleService("/Users/trungtran/PycharmProjects/finance-core/credentials.json")
+# request = GoogleSheetRequest(spreadsheet_id="12TqYhXjfbVDt6C8zUjyBbgUbGJmhNJ4Mly1Lgi8gsgk",
+#                              sheet_name="Tháng 10")
+#
+# response = google_service.read(request)
+# pprint(response)
+# gc = gspread.service_account(filename="credentials.json", )
+# spread_sheet = gc.open_by_key("12TqYhXjfbVDt6C8zUjyBbgUbGJmhNJ4Mly1Lgi8gsgk")
+# spread_sheet.worksheet("Tháng 10").get_all_values()
+# work_sheet = spread_sheet.worksheet("Tháng 10")
+# union = work_sheet.get_all_values()
+# pprint(union)
+# body = [["", "aaa", "", "190"]]
+# work_sheet.update("A70:D70", body)
 
 
 # Press the green button in the gutter to run the script.

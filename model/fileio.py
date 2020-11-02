@@ -1,8 +1,15 @@
+from typing import Any, Mapping
+
+from model.serializer import Serializer
+
 from model.state import *
 from algorithm import lcs
+from caching.jsondb import *
+from json import JSONEncoder
+from tinydb import TinyDB, Query
 
 
-class Line:
+class Line(Serializer):
 
     def __init__(self, line_number=None, content=None):
         self.line_number = line_number + 1
@@ -41,21 +48,21 @@ class Line:
         return lcs.diff_table(self.content, line_obj.content, len(self.content), len(line_obj.content))
 
 
-class FileVersion:
+class FileVersion(Serializer,JSONEncoder):
 
     def __init__(self, version_name=None, all_lines=None, current_version=1):
         self.version_name = version_name
         self.current_version = current_version
-        self.lines = deque()
+        self.lines = []
         for num, content in enumerate(all_lines):
             line_obj = Line(num, content)
             self.lines.append(line_obj)
 
-    def compare_line(self, new_version):
+    def compare_line(self, new_version) -> [Line]:
         counts = []
         while len(self.lines) != 0 and len(new_version.lines) != 0:
-            old_line = self.lines.popleft()
-            new_line = new_version.lines.popleft()
+            old_line = self.lines.pop()
+            new_line = new_version.lines.pop()
             counts.append(old_line.compare_with(new_line))
         if len(self.lines) > 0:
             for remain in self.lines:
@@ -74,7 +81,7 @@ class FileVersion:
         return counts
 
     @staticmethod
-    def handle_remain(lines, state : Modification):
+    def handle_remain(lines, state: Modification):
         remain_counts = []
         for remain in lines.lines:
             line_number = remain.line_number
@@ -85,7 +92,7 @@ class FileVersion:
         return remain_counts
 
 
-class File:
+class File(Serializer):
 
     def __init__(self, file_name, lines):
         self.file_name = file_name
@@ -98,4 +105,5 @@ class File:
         return self.file_version.current_version
 
     def compare(self, another_file):
-        return self.file_version.compare_line(another_file.file_version)
+        lines = self.file_version.compare_line(another_file.file_version)
+        return lines
