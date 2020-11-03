@@ -11,9 +11,11 @@ import gspread
 from caching.jsondb import *
 import sqlite3
 import ast
-
+from munch import munchify
 
 """find a way tp load document record to file_version_object"""
+
+
 def main():
     f = open("test.txt", "r")
     lines = notereader.get_new_contents(possible_file_name=f'Tháng 10')
@@ -22,13 +24,21 @@ def main():
     db = TinyDB("db.json")
     table = db.table("file_version")
     if len(table) == 0:
+        # with open("db-1.json","w") as out:
+        #     json.dump(new_file_version.to_json(), out, indent=4)
         table.insert({"content": new_file_version.to_json(), "ver_name": u"Tháng 10"})
     else:
-        file_version_query = Query()
-
+        # doc = json.load(out, cls=FileVersion)
         doc = table.get(doc_id=len(table))
-        loaded = json.load(doc, cls=FileVersion)
-        new_file_version.compare_line(loaded)
+        loaded = json.loads(json.dumps(doc['content']))
+        from_json = json.loads(loaded)
+        old_lines = []
+        all_lines = from_json['lines']
+        for each in all_lines:
+            old_line = Line.from_json(each)
+            old_lines.append(old_line)
+        old_version = FileVersion(loaded_lines=old_lines)
+        lines = old_version.compare_line(new_file_version)
         table.insert({"content": new_file_version.to_json(), "ver_name": u" Tháng 10"})
 
 

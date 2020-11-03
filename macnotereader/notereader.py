@@ -34,8 +34,7 @@ def get_new_contents(file_location="/Users/trungtran/Library/Group Containers/gr
                 if possible_file_name in row['title']:
                     data = get_uncompressed_data(row['data'])
                     text_content = process_body_blob(data)
-                    print(text_content)
-                    lines.append(text_content)
+                    lines = text_content.split("\n")
         except sqlite3.Error:
             print("Error")
     conn.close()

@@ -11,10 +11,14 @@ from tinydb import TinyDB, Query
 
 class Line(Serializer):
 
-    def __init__(self, line_number=None, content=None):
+    def __init__(self, line_number=None, content=None,**kwargs):
         self.line_number = line_number + 1
         self.content = content
         self.state = Create(line_number, content)
+
+    @classmethod
+    def from_json(cls, json_dict):
+        return cls(**json_dict)
 
     def current_state(self):
         return self.state
@@ -48,21 +52,24 @@ class Line(Serializer):
         return lcs.diff_table(self.content, line_obj.content, len(self.content), len(line_obj.content))
 
 
-class FileVersion(Serializer,JSONEncoder):
+class FileVersion(Serializer, JSONEncoder):
 
-    def __init__(self, version_name=None, all_lines=None, current_version=1):
+    def __init__(self, version_name=None, all_lines=None, current_version=1,**kwargs):
         self.version_name = version_name
         self.current_version = current_version
         self.lines = []
-        for num, content in enumerate(all_lines):
-            line_obj = Line(num, content)
-            self.lines.append(line_obj)
+        if all_lines is not None:
+            for num, content in enumerate(all_lines):
+                line_obj = Line(num, content)
+                self.lines.append(line_obj)
+        else:
+            self.lines = kwargs['loaded_lines']
 
     def compare_line(self, new_version) -> [Line]:
         counts = []
         while len(self.lines) != 0 and len(new_version.lines) != 0:
-            old_line = self.lines.pop()
-            new_line = new_version.lines.pop()
+            old_line = self.lines.pop(0)
+            new_line = new_version.lines.pop(0)
             counts.append(old_line.compare_with(new_line))
         if len(self.lines) > 0:
             for remain in self.lines:
