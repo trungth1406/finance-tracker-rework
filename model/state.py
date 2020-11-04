@@ -51,3 +51,7 @@ class Delete(Modification):
     def get_content(self):
         self._content = ""
         return super().get_content()
+
+
+class Unchanged(Modification):
+    pass

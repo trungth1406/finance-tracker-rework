@@ -11,10 +11,10 @@ from tinydb import TinyDB, Query
 
 class Line(Serializer):
 
-    def __init__(self, line_number=None, content=None,**kwargs):
+    def __init__(self, line_number: int, content: str):
         self.line_number = line_number + 1
         self.content = content
-        self.state = Create(line_number, content)
+        self.state = Unchanged(line_number, content)
 
     @classmethod
     def from_json(cls, json_dict):
@@ -54,7 +54,7 @@ class Line(Serializer):
 
 class FileVersion(Serializer, JSONEncoder):
 
-    def __init__(self, version_name=None, all_lines=None, current_version=1,**kwargs):
+    def __init__(self, version_name=None, all_lines=None, current_version=1, **kwargs):
         self.version_name = version_name
         self.current_version = current_version
         self.lines = []
