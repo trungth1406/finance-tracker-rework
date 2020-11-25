@@ -20,6 +20,11 @@ class IncomeSource(ABC):
     def get_amount(self):
         return self.amount
 
+    def create_account(self, name, with_amount):
+        account = Account(name, self)
+        account.withdraw_from_resource(with_amount)
+        return account
+
     def add(self, amount):
         self.amount += amount
         return self
@@ -31,11 +36,15 @@ class IncomeSource(ABC):
 
 class Account:
 
-    def __init__(self, name, limit):
+    def __init__(self, name, from_resource):
         self.uuid = uuid.uuid4()
         self.name = name
         self.amount = 0
-        self.limit = limit
+        self.from_resource = from_resource
+
+    @classmethod
+    def init_from_resource(cls, name, resource):
+        return cls(name, resource)
 
     @property
     def get_id(self):
@@ -46,33 +55,17 @@ class Account:
         return self.name
 
     @property
-    def get_amount(self):
+    def get_remain_in_account(self):
         return self.amount
 
-    @property
-    def get_limit(self):
-        return self.limit
-
-    def withdraw_from(self, account, amount):
-        if account is not Account:
-            raise ValueError("Need to pass in another Account")
-        if account.get_amount < amount:
+    def withdraw_from_resource(self, amount):
+        if self.from_resource.amount < amount:
             raise ValueError("The Account to transfer money does not have enough money")
-        account.amount -= amount
+        self.from_resource.take(amount)
         self.amount += amount
 
-    def deposit_to(self, account, amount):
-        if account is not Account:
-            raise ValueError("Need to pass in another Account")
-        if account.get_amount < amount:
-            raise ValueError("The Account to transfer money does not have enough money")
-        account.amount -= amount
-        self.amount += amount
-
-    def take_from(self, income_source, amount):
-        if type(income_source) is not IncomeSource:
-            raise ValueError("Need to pass in a Resource of money")
-        if income_source.amount < amount:
-            raise ValueError("The Account to transfer money does not have enough money")
-        income_source.amount -= amount
-        self.amount += amount
+    def withdraw(self, amount):
+        if amount > self.amount:
+            raise ValueError("The withdrawal money is greater than current money in the account")
+        self.amount -= amount
+        return self
