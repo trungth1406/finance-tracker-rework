@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from datetime import date
 
-from account.resource import Account, IncomeSource
+from account.resource import Transferable
 
 
-class Transaction(ABC):
+class Transactional(ABC):
 
     @abstractmethod
     def get_name(self):
@@ -19,12 +19,11 @@ class Transaction(ABC):
         pass
 
 
-class AccountTransaction(Transaction):
+class BaseTransaction(Transactional):
 
-    def __init__(self, date_of_execution, from_acc):
+    def __init__(self, date_of_execution):
         self.name = ""
         self.date = date_of_execution
-        self.account = from_acc
         self.transaction_amount = 0
 
     def get_name(self):
@@ -36,16 +35,26 @@ class AccountTransaction(Transaction):
     def get_transaction_amount(self):
         return self.transaction_amount
 
-    def withdraw_from(self, from_source, amount):
-        if type(from_source) is not IncomeSource:
-            raise ValueError("Account to transfer from and to mus be of Source type")
-        self.account.withdraw_from_resource(amount)
+
+class ResourceTransaction(BaseTransaction):
+
+    def __init__(self, date_of_execution, from_resource: Transferable, to_resource: Transferable):
+        super().__init__(date_of_execution)
+        if issubclass(type(to_resource), Transferable):
+            self.to_resource = to_resource
+        if issubclass(type(from_resource), Transferable):
+            self.from_resource = from_resource
+
+    def get_name(self):
+        self.name = f'Transfer from {self.from_resource.get_name()} to {self.to_resource.get_name()}'
+        return self.name
+
+    def execute_deposit(self, amount):
         self.transaction_amount = amount
-        self.name = f"Withdraw from resource {from_source.get_name}"
+        self.from_resource.transfer_to(self.to_resource, amount)
         return self
 
-    def withdraw(self, amount, reason):
-        self.account.withdraw(amount)
+    def execute_withdraw(self, amount):
         self.transaction_amount = amount
-        self.name = f"Withdraw money for {reason} "
+        self.from_resource.withdraw_from(self.to_resource, amount)
         return self

@@ -1,12 +1,8 @@
-from typing import Any, Mapping
-
-from model.serializer import Serializer
-
-from model.state import *
-from algorithm import lcs
-from caching.jsondb import *
 from json import JSONEncoder
-from tinydb import TinyDB, Query
+
+from algorithm import lcs
+from model.serializer import Serializer
+from model.state import *
 
 
 class Line(Serializer):

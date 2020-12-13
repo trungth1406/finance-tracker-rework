@@ -1,71 +1,59 @@
 from abc import ABC
-import uuid
 
 
-class IncomeSource(ABC):
+class Transferable(ABC):
+
     def __init__(self, name, amount):
-        self.id = uuid.uuid4()
         self.name = name
         self.amount = amount
 
-    @property
-    def get_id(self):
-        return self.id
-
-    @property
     def get_name(self):
         return self.name
 
-    @property
-    def get_amount(self):
-        return self.amount
-
-    def create_account(self, name, with_amount):
-        account = Account(name, self)
-        account.withdraw_from_resource(with_amount)
-        return account
-
-    def add(self, amount):
+    def deposit(self, amount):
         self.amount += amount
         return self
 
-    def take(self, amount):
+    def withdraw(self, amount):
+        if amount > self.amount:
+            raise ValueError("Insufficient amount")
         self.amount -= amount
         return self
 
+    def transfer_to(self, transferable, with_amount):
+        self.withdraw(with_amount)
+        transferable.deposit(with_amount)
 
-class Account:
+    def withdraw_from(self, transferable, with_amount):
+        self.deposit(with_amount)
+        transferable.withdraw(with_amount)
 
-    def __init__(self, name, from_resource):
-        self.uuid = uuid.uuid4()
-        self.name = name
-        self.amount = 0
+    def get_current_amount(self):
+        return self.amount
+
+
+class Resource(Transferable):
+
+    def create_account(self, name, with_amount):
+        account = Account(name=name, amount=0, from_resource=self)
+        account.withdraw_from_resource(with_amount)
+        return account
+
+
+class Account(Transferable):
+
+    def __init__(self, name, amount, from_resource):
+        super().__init__(name, amount)
         self.from_resource = from_resource
 
     @classmethod
     def init_from_resource(cls, name, resource):
         return cls(name, resource)
 
-    @property
-    def get_id(self):
-        return self.uuid
-
-    @property
-    def get_name(self):
-        return self.name
-
-    @property
-    def get_remain_in_account(self):
-        return self.amount
-
     def withdraw_from_resource(self, amount):
-        if self.from_resource.amount < amount:
-            raise ValueError("The Account to transfer money does not have enough money")
-        self.from_resource.take(amount)
-        self.amount += amount
+        self.from_resource.withdraw(amount)
+        self.deposit(amount)
 
-    def withdraw(self, amount):
-        if amount > self.amount:
-            raise ValueError("The withdrawal money is greater than current money in the account")
-        self.amount -= amount
-        return self
+    def return_to_resource(self):
+        self.withdraw(self.amount)
+        self.from_resource.deposit(self.amount)
